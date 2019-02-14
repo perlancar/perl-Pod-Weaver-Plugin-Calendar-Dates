@@ -8,6 +8,7 @@ use Moose;
 with 'Pod::Weaver::Role::AddTextToSection';
 with 'Pod::Weaver::Role::Section';
 
+use Data::Dump;
 use List::Util qw(min max uniq);
 use Perinci::Result::Format::Lite;
 
@@ -33,13 +34,36 @@ sub _process_module {
     my $min_year = $package->get_min_year;
     my $max_year = $package->get_max_year;
 
+    my $sample_year = max($min_year, min($cur_year  , $max_year));
     my @sample_years = uniq(
         max($min_year, min($cur_year-1, $max_year)),
         max($min_year, min($cur_year  , $max_year)),
         max($min_year, min($cur_year+1, $max_year))
     );
 
-    # create DATES STATISTICS section
+    # add Synopsis section
+    {
+        my @pod;
+        push @pod, " use $package;\n";
+        push @pod, " my \$min_year = $package->get_min_year; # => $min_year\n";
+        push @pod, " my \$max_year = $package->get_max_year; # => $max_year\n";
+        push @pod, " my \$entries  = $package->get_entries($sample_year);\n\n";
+
+        my $entries = $package->get_entries($sample_year);
+        my $dump = Data::Dump::dump($entries);
+        $dump =~ s/^/ /gm;
+        push @pod, "C<\$entries> result:\n\n", $dump, "\n\n";
+
+        $self->add_text_to_section(
+            $document, join("", @pod), 'SYNOPSIS',
+            {
+                after_section => ['VERSION', 'NAME'],
+                before_section => 'DESCRIPTION',
+                ignore => 1,
+            });
+    }
+
+    # add DATES STATISTICS section
     {
         my $table = Perinci::Result::Format::Lite::format(
             [200, "OK", {
@@ -59,7 +83,7 @@ sub _process_module {
         );
     }
 
-    # create DATES SAMPLES section
+    # add DATES SAMPLES section
     {
         my @pod;
       YEAR:
