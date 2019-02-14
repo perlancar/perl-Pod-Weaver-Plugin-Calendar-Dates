@@ -100,6 +100,9 @@ sub _process_module {
 
             for my $e (@$entries) {
                 $e->{tags} = join(", ", @{$e->{tags}}) if $e->{tags};
+                for (keys %$e) {
+                    delete $e->{$_} unless /\A(date|summary|tags)\z/;
+                }
             }
             my $table = Perinci::Result::Format::Lite::format(
                 [200, "OK", $entries],
