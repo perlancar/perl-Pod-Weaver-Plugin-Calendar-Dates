@@ -44,6 +44,7 @@ sub _process_module {
     # add Synopsis section
     {
         my @pod;
+        push @pod, "=head2 Using from Perl\n\n";
         push @pod, " use $package;\n";
         push @pod, " my \$min_year = $package->get_min_year; # => $min_year\n";
         push @pod, " my \$max_year = $package->get_max_year; # => $max_year\n";
@@ -53,6 +54,11 @@ sub _process_module {
         my $dump = Data::Dump::dump($entries);
         $dump =~ s/^/ /gm;
         push @pod, "C<\$entries> result:\n\n", $dump, "\n\n";
+
+        (my $modshort = $package) =~ s/\ACalendar::Dates:://;
+        push @pod, "=head2 Using from CLI (requires L<list-calendar-dates> and L<calx>)\n\n";
+        push @pod, " % list-calendar-dates -l -m $modshort\n";
+        push @pod, " % calx -c $modshort\n\n";
 
         $self->add_text_to_section(
             $document, join("", @pod), 'SYNOPSIS',
